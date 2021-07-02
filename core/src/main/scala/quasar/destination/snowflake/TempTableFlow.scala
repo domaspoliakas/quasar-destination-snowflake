@@ -53,7 +53,7 @@ object TempTableFlow {
       writeMode: WriteMode,
       schema: String,
       hygienicIdent: String => String,
-      args: FlowArgs[ColumnType.Scalar])
+      args: FlowArgs[SnowflakeType])
       : Resource[F, Flow[Byte]] = {
 
     val log = Slf4sLogHandler(logger)
