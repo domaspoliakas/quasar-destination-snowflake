@@ -57,19 +57,6 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
 
   implicit val typeIdLabel: Label[TypeId] = SnowflakeTypeId.label
 
-      // case ColumnType.Null => fr0"BYTEINT".validNel
-      // case ColumnType.Boolean => fr0"BOOLEAN".validNel
-      // case ColumnType.LocalTime => fr0"TIME".validNel
-      // case ot @ ColumnType.OffsetTime => ot.invalidNel
-      // case ColumnType.LocalDate => fr0"DATE".validNel
-      // case od @ ColumnType.OffsetDate => od.invalidNel
-      // case ColumnType.LocalDateTime => fr0"TIMESTAMP_NTZ".validNel
-      // case ColumnType.OffsetDateTime => fr0"TIMESTAMP_TZ".validNel
-      // case i @ ColumnType.Interval => i.invalidNel
-      // // this is an arbitrary precision and scale
-      // case ColumnType.Number => fr0"NUMBER(33, 3)".validNel
-      // case ColumnType.String => fr0"STRING".validNel
-
   def coerce(tpe: ColumnType.Scalar): TypeCoercion[SnowflakeTypeId] = tpe match {
     case ColumnType.Boolean =>
       TypeCoercion.Satisfied(NonEmptyList.one(SnowflakeTypeId.BOOLEAN))
@@ -116,7 +103,28 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
 
   }
 
-  def construct(id: SnowflakeTypeId): Either[SnowflakeType,Constructor[SnowflakeType]] = ???
+
+  def construct(id: SnowflakeTypeId): Either[SnowflakeType,Constructor[SnowflakeType]] = id match {
+    case SnowflakeTypeId.NUMBER => 
+    Right(Constructor.Binary(
+      Labeled("precision", Formal.integer(Some(Ior.both(1, maxSize)), Some(stepOne), Some(1024))),
+      Labeled("scale", Formal.integer(Some(Ior.both(1, maxSize)), Some(stepOne), Some(1024))),
+      SnowflakeType.NUMBER(_, _)))
+    case SnowflakeTypeId.FLOAT =>  ???
+    case SnowflakeTypeId.VARCHAR => ???
+    case SnowflakeTypeId.BINARY => ???
+    case SnowflakeTypeId.BOOLEAN => ???
+    case SnowflakeTypeId.DATE => ???
+    case SnowflakeTypeId.TIME => ???
+    case SnowflakeTypeId.TIMESTAMP_LTZ => ???
+    case SnowflakeTypeId.TIMESTAMP_NTZ => ???
+    case SnowflakeTypeId.TIMESTAMP_TZ => ???
+    case SnowflakeTypeId.VARIANT => ???
+    case SnowflakeTypeId.OBJECT => ???
+    case SnowflakeTypeId.ARRAY => ???
+    case SnowflakeTypeId.GEOGRAPHY => ???
+    case SnowflakeTypeId.BYTEINT => ???
+  }
 
   def destinationType: DestinationType =
     SnowflakeDestinationModule.destinationType
