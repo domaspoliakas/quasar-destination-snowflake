@@ -19,7 +19,7 @@ package quasar.destination.snowflake
 import slamdata.Predef._
 import scala.Predef.classOf
 
-import quasar.api.{Column, ColumnType}
+import quasar.api.Column
 import quasar.api.push.OffsetKey
 import quasar.api.resource._
 import quasar.connector._
@@ -44,7 +44,7 @@ import org.slf4s.Logger
 import skolems.∀
 
 object Flow {
-  private type FlowColumn = Column[ColumnType.Scalar]
+  private type FlowColumn = Column[SnowflakeType]
 
   sealed trait Args {
     def path: ResourcePath
@@ -61,14 +61,14 @@ object Flow {
       def idColumn = None
     }
 
-    def ofUpsert(args: UpsertSink.Args[ColumnType.Scalar]): Args = new Args {
+    def ofUpsert(args: UpsertSink.Args[SnowflakeType]): Args = new Args {
       def path = args.path
       def columns = args.columns
       def writeMode = args.writeMode
       def idColumn = args.idColumn.some
     }
 
-    def ofAppend(args: AppendSink.Args[ColumnType.Scalar]): Args = new Args {
+    def ofAppend(args: AppendSink.Args[SnowflakeType]): Args = new Args {
       def path = args.path
       def columns = args.columns
       def writeMode = args.writeMode
@@ -87,7 +87,7 @@ object Flow {
 
     def render: RenderConfig[Byte]
 
-    def flowSinks: NonEmptyList[ResultSink[F, ColumnType.Scalar]] =
+    def flowSinks: NonEmptyList[ResultSink[F, SnowflakeType]] =
       NonEmptyList.of(ResultSink.create(create), ResultSink.upsert(upsert), ResultSink.append(append))
 
     private def create(path: ResourcePath, cols: NonEmptyList[FlowColumn])
@@ -105,14 +105,14 @@ object Flow {
       })
     }
 
-    private def upsert(upsertArgs: UpsertSink.Args[ColumnType.Scalar])
+    private def upsert(upsertArgs: UpsertSink.Args[SnowflakeType])
         : (RenderConfig[Byte], ∀[Consume[DataEvent[Byte, *], *]]) = {
       val args = Args.ofUpsert(upsertArgs)
       val consume = ∀[Consume[DataEvent[Byte, *], *]](upsertPipe(args))
       (render, consume)
     }
 
-    private def append(appendArgs: AppendSink.Args[ColumnType.Scalar])
+    private def append(appendArgs: AppendSink.Args[SnowflakeType])
         : (RenderConfig[Byte], ∀[Consume[AppendEvent[Byte, *], *]]) = {
       val args = Args.ofAppend(appendArgs)
       val consume = ∀[Consume[AppendEvent[Byte, *], *]](upsertPipe(args))
