@@ -17,16 +17,18 @@ object SnowflakeTypeId {
   final case object BOOLEAN extends SnowflakeTypeId(4)
   final case object DATE extends SnowflakeTypeId(5)
   final case object TIME extends SnowflakeTypeId(6)
-  final case object TIMESTAMP_LTZ extends SnowflakeTypeId(7)
-  final case object TIMESTAMP_NTZ extends SnowflakeTypeId(8)
-  final case object TIMESTAMP_TZ extends SnowflakeTypeId(9)
-  final case object VARIANT extends SnowflakeTypeId(10)
-  final case object OBJECT extends SnowflakeTypeId(11)
-  final case object ARRAY extends SnowflakeTypeId(12)
-  final case object GEOGRAPHY extends SnowflakeTypeId(13)
+  final case object TIMESTAMP_NTZ extends SnowflakeTypeId(7)
+  final case object TIMESTAMP_TZ extends SnowflakeTypeId(8)
   // Technically the same as NUMBER, but specified separately 
   // for ColumnType.Null so that null column wouldn't be specifying precision
-  final case object BYTEINT extends SnowflakeTypeId(14)
+  final case object BYTEINT extends SnowflakeTypeId(9)
+  
+  // The below types have no valid coercions
+  // final case object TIMESTAMP_LTZ extends SnowflakeTypeId(10)
+  // final case object VARIANT extends SnowflakeTypeId(11)
+  // final case object OBJECT extends SnowflakeTypeId(12)
+  // final case object ARRAY extends SnowflakeTypeId(13)
+  // final case object GEOGRAPHY extends SnowflakeTypeId(14)
 
   val ordinalPrism: Prism[Int, SnowflakeTypeId] =
     Prism.partial[Int, SnowflakeTypeId]({
@@ -37,14 +39,16 @@ object SnowflakeTypeId {
       case BOOLEAN.ordinal => BOOLEAN
       case DATE.ordinal => DATE
       case TIME.ordinal => TIME
-      case TIMESTAMP_LTZ.ordinal => TIMESTAMP_LTZ
       case TIMESTAMP_NTZ.ordinal => TIMESTAMP_NTZ
       case TIMESTAMP_TZ.ordinal => TIMESTAMP_TZ
-      case VARIANT.ordinal => VARIANT
-      case OBJECT.ordinal => OBJECT
-      case ARRAY.ordinal => ARRAY
-      case GEOGRAPHY.ordinal => GEOGRAPHY
       case BYTEINT.ordinal => BYTEINT
+
+      // The below types have no valid coercions, so commented out (for now)
+      // case TIMESTAMP_LTZ.ordinal => TIMESTAMP_LTZ
+      // case VARIANT.ordinal => VARIANT
+      // case OBJECT.ordinal => OBJECT
+      // case ARRAY.ordinal => ARRAY
+      // case GEOGRAPHY.ordinal => GEOGRAPHY
     })(_.ordinal)
 
   val label = Label[SnowflakeTypeId] {
@@ -55,13 +59,15 @@ object SnowflakeTypeId {
       case BOOLEAN => "BOOLEAN"
       case DATE => "DATE"
       case TIME => "TIME"
-      case TIMESTAMP_LTZ => "TIMESTAMP_LTZ"
       case TIMESTAMP_NTZ => "TIMESTAMP_NTZ/DATETIME"
       case TIMESTAMP_TZ => "TIMESTAMP_TZ"
-      case VARIANT => "VARIANT"
-      case OBJECT => "OBJECT"
-      case ARRAY => "ARRAY"
-      case GEOGRAPHY => "GEOGRAPHY"
       case BYTEINT => "BYTEINT"
+
+      // The below types have no valid coercions, so commented out (for now)
+      // case TIMESTAMP_LTZ => "TIMESTAMP_LTZ"
+      // case VARIANT => "VARIANT"
+      // case OBJECT => "OBJECT"
+      // case ARRAY => "ARRAY"
+      // case GEOGRAPHY => "GEOGRAPHY"
   }
 }

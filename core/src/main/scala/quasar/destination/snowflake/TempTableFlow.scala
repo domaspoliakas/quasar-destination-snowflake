@@ -19,7 +19,7 @@ package quasar.destination.snowflake
 import slamdata.Predef._
 import scala.Predef.classOf
 
-import quasar.api.{Column, ColumnType}
+import quasar.api.Column
 import quasar.api.resource._
 import quasar.concurrent.NamedDaemonThreadFactory
 import quasar.connector.{MonadResourceErr, ResourceError, IdBatch}
@@ -28,7 +28,7 @@ import quasar.lib.jdbc.Slf4sLogHandler
 import quasar.lib.jdbc.destination.WriteMode
 import quasar.lib.jdbc.destination.flow.{Flow, FlowArgs}
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -85,11 +85,7 @@ object TempTableFlow {
         case file /: ResourcePath.Root => file.pure[F]
         case _ => MonadResourceErr[F].raiseError(ResourceError.notAResource(args.path))
       }
-      columnFragments <- args.columns.traverse(mkColumn(hygienicIdent, _)).fold(
-        errs => Sync[F].raiseError {
-          ColumnTypesNotSupported(errs)
-        },
-        _.pure[F])
+      columnFragments = args.columns.map(mkColumn(hygienicIdent, _))
       _ <- checkWriteMode(tbl)
       totalBytes <- Ref.in[F, ConnectionIO, Long](0L)
       tempTable = TempTable(
@@ -157,7 +153,7 @@ object TempTableFlow {
         writeMode: WriteMode,
         tableName: String,
         schema: String,
-        columns: NonEmptyList[Column[ColumnType.Scalar]],
+        columns: NonEmptyList[Column[SnowflakeType]],
         columnFragments: NonEmptyList[Fragment],
         hygienicIdent: String => String,
         filterColumn: Option[Column[_]])
@@ -268,25 +264,8 @@ object TempTableFlow {
       ExecutionContext.fromExecutor(
         Executors.newCachedThreadPool(NamedDaemonThreadFactory("snowflake-destination"))))
 
-  private def mkColumn(hygienicIdent: String => String, c: Column[ColumnType.Scalar])
-      : ValidatedNel[ColumnType.Scalar, Fragment] =
-    columnTypeToSnowflake(c.tpe)
-      .map(Fragment.const(hygienicIdent(c.name)) ++ _)
+  private def mkColumn(hygienicIdent: String => String, c: Column[SnowflakeType])
+      : Fragment =
+    Fragment.const(hygienicIdent(c.name)) ++ c.tpe.fragment
 
-  private def columnTypeToSnowflake(ct: ColumnType.Scalar)
-      : ValidatedNel[ColumnType.Scalar, Fragment] =
-    ct match {
-      case ColumnType.Null => fr0"BYTEINT".validNel
-      case ColumnType.Boolean => fr0"BOOLEAN".validNel
-      case ColumnType.LocalTime => fr0"TIME".validNel
-      case ot @ ColumnType.OffsetTime => ot.invalidNel
-      case ColumnType.LocalDate => fr0"DATE".validNel
-      case od @ ColumnType.OffsetDate => od.invalidNel
-      case ColumnType.LocalDateTime => fr0"TIMESTAMP_NTZ".validNel
-      case ColumnType.OffsetDateTime => fr0"TIMESTAMP_TZ".validNel
-      case i @ ColumnType.Interval => i.invalidNel
-      // this is an arbitrary precision and scale
-      case ColumnType.Number => fr0"NUMBER(33, 3)".validNel
-      case ColumnType.String => fr0"STRING".validNel
-    }
 }
