@@ -18,15 +18,16 @@ package quasar.destination.snowflake
 
 import scala._, Predef._
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Ior}
 import cats.effect.{ConcurrentEffect, Timer, Resource, ContextShift}
 
 import doobie.Transactor
 
 import monocle.Prism
 
-import quasar.api.{ColumnType, Label}
+import quasar.api.{ColumnType, Label, Labeled}
 import quasar.api.push.TypeCoercion
+import quasar.api.push.param.Formal
 import quasar.api.destination._
 import quasar.connector.MonadResourceErr
 import quasar.connector.destination._
@@ -37,7 +38,7 @@ import quasar.lib.jdbc.destination.flow.{FlowSinks, FlowArgs, Flow, Retry}
 import org.slf4s.Logger
 
 import scala.concurrent.duration._
-import net.snowflake.client.jdbc.SnowflakeType
+import quasar.api.push.param.IntegerStep
 
 final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer: ContextShift](
     xa: Transactor[F],
@@ -104,13 +105,21 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
   }
 
 
+  private def stepOne: IntegerStep = IntegerStep.Factor(0, 1)
+
   def construct(id: SnowflakeTypeId): Either[SnowflakeType,Constructor[SnowflakeType]] = id match {
     case SnowflakeTypeId.NUMBER => 
+    // TODO double check the bounds are ok
     Right(Constructor.Binary(
-      Labeled("precision", Formal.integer(Some(Ior.both(1, maxSize)), Some(stepOne), Some(1024))),
-      Labeled("scale", Formal.integer(Some(Ior.both(1, maxSize)), Some(stepOne), Some(1024))),
+      Labeled("precision", Formal.integer(Some(Ior.both(1, 38)), Some(stepOne), Some(36))),
+      Labeled("scale", Formal.integer(Some(Ior.both(0, 37)), Some(stepOne), Some(3))),
       SnowflakeType.NUMBER(_, _)))
-    case SnowflakeTypeId.FLOAT =>  ???
+    case SnowflakeTypeId.FLOAT => 
+    Right(Constructor.Binary(
+      Labeled("precision", Formal.integer(Some(Ior.both(1, 38)), Some(stepOne), Some(36))),
+      Labeled("scale", Formal.integer(Some(Ior.both(0, 37)), Some(stepOne), Some(3))),
+      SnowflakeType.NUMBER(_, _)))
+
     case SnowflakeTypeId.VARCHAR => ???
     case SnowflakeTypeId.BINARY => ???
     case SnowflakeTypeId.BOOLEAN => ???
