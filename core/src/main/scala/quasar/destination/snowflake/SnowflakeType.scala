@@ -59,10 +59,6 @@ object SnowflakeType {
     def fragment: Fragment = fr0"TIME($precision)"
   }
 
-  final case object TIMESTAMP_LTZ extends SnowflakeType {
-    def fragment: Fragment = fr0"TIMESTAMP_LTZ"
-  }
-
   final case object TIMESTAMP_NTZ extends SnowflakeType {
     def fragment: Fragment = fr0"TIMESTAMP_NTZ"
   }
@@ -71,20 +67,22 @@ object SnowflakeType {
     def fragment: Fragment = fr0"TIMESTAMP_TZ"
   }
 
-  final case object VARIANT extends SnowflakeType {
-    def fragment: Fragment = fr0"VARIANT"
-  }
-
-  final case object OBJECT extends SnowflakeType {
-    def fragment: Fragment = fr0"OBJECT"
-  }
-
-  final case object ARRAY extends SnowflakeType {
-    def fragment: Fragment = fr0"ARRAY"
-  }
-
-  final case object GEOGRAPHY extends SnowflakeType {
-    def fragment: Fragment = fr0"GEOGRAPHY"
-  }
+  // The below types have no valid coercions, so commented out (for now)
+  //
+  // final case object TIMESTAMP_LTZ extends SnowflakeType {
+  //   def fragment: Fragment = fr0"TIMESTAMP_LTZ"
+  // }
+  // final case object VARIANT extends SnowflakeType {
+  //   def fragment: Fragment = fr0"VARIANT"
+  // }
+  // final case object OBJECT extends SnowflakeType {
+  //   def fragment: Fragment = fr0"OBJECT"
+  // }
+  // final case object ARRAY extends SnowflakeType {
+  //   def fragment: Fragment = fr0"ARRAY"
+  // }
+  // final case object GEOGRAPHY extends SnowflakeType {
+  //   def fragment: Fragment = fr0"GEOGRAPHY"
+  // }
 
 }

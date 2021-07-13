@@ -108,30 +108,41 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
 
   def construct(id: SnowflakeTypeId): Either[SnowflakeType,Constructor[SnowflakeType]] = id match {
     case SnowflakeTypeId.NUMBER => 
-    // TODO double check the bounds are ok
-    Right(Constructor.Binary(
-      Labeled("precision", Formal.integer(Some(Ior.both(1, 38)), Some(stepOne), Some(36))),
-      Labeled("scale", Formal.integer(Some(Ior.both(0, 37)), Some(stepOne), Some(3))),
-      SnowflakeType.NUMBER(_, _)))
-    case SnowflakeTypeId.FLOAT => 
-    Right(Constructor.Binary(
-      Labeled("precision", Formal.integer(Some(Ior.both(1, 38)), Some(stepOne), Some(36))),
-      Labeled("scale", Formal.integer(Some(Ior.both(0, 37)), Some(stepOne), Some(3))),
-      SnowflakeType.NUMBER(_, _)))
+      Right(Constructor.Binary(
+        Labeled("precision", Formal.integer(Some(Ior.both(1, 38)), Some(stepOne), Some(35))),
+        Labeled("scale", Formal.integer(Some(Ior.both(0, 37)), Some(stepOne), Some(3))),
+        SnowflakeType.NUMBER(_, _)))
 
-    case SnowflakeTypeId.VARCHAR => ???
-    case SnowflakeTypeId.BINARY => ???
-    case SnowflakeTypeId.BOOLEAN => ???
-    case SnowflakeTypeId.DATE => ???
-    case SnowflakeTypeId.TIME => ???
-    case SnowflakeTypeId.TIMESTAMP_LTZ => ???
-    case SnowflakeTypeId.TIMESTAMP_NTZ => ???
-    case SnowflakeTypeId.TIMESTAMP_TZ => ???
-    case SnowflakeTypeId.VARIANT => ???
-    case SnowflakeTypeId.OBJECT => ???
-    case SnowflakeTypeId.ARRAY => ???
-    case SnowflakeTypeId.GEOGRAPHY => ???
-    case SnowflakeTypeId.BYTEINT => ???
+    case SnowflakeTypeId.FLOAT => 
+      Left(SnowflakeType.FLOAT)
+
+    case SnowflakeTypeId.VARCHAR => 
+      Right(Constructor.Unary(
+        Labeled("size", Formal.integer(Some(Ior.both(1, 16777216)), Some(stepOne), Some(1024))),
+        SnowflakeType.VARCHAR))
+
+    case SnowflakeTypeId.BINARY => 
+      Left(SnowflakeType.BINARY)
+
+    case SnowflakeTypeId.BOOLEAN => 
+      Left(SnowflakeType.BOOLEAN)
+
+    case SnowflakeTypeId.DATE => 
+      Left(SnowflakeType.DATE)
+
+    case SnowflakeTypeId.TIME => 
+      Right(Constructor.Unary(
+        Labeled("precision", Formal.integer(Some(Ior.both(0, 9)), Some(stepOne), Some(9))),
+        SnowflakeType.TIME))
+
+    case SnowflakeTypeId.TIMESTAMP_NTZ => 
+      Left(SnowflakeType.TIMESTAMP_NTZ)
+
+    case SnowflakeTypeId.TIMESTAMP_TZ => 
+      Left(SnowflakeType.TIMESTAMP_TZ)
+
+    case SnowflakeTypeId.BYTEINT => 
+      Left(SnowflakeType.BYTEINT)
   }
 
   def destinationType: DestinationType =
