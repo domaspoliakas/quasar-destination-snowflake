@@ -95,17 +95,6 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
           case _ => ko("Expected a malformed configuration")
       }})
     }
-
-    "fail when unable to connect to database" >>* {
-      val cfg = config.copy(accountName = "incorrect").asJson
-
-      dest(cfg)(r => IO.pure {
-        r match {
-          case Left(_) =>
-            ok
-          case _ => ko("Expected a connection failed or access denied")
-      }})
-    }
   }
 
   "seek sinks (upsert and append)" should {
@@ -457,9 +446,7 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
         .attempt
         .map(_ must beLeft)
     }
-
   }
-
 
   def config: SnowflakeConfig = SnowflakeConfig(
       writeMode = None,
@@ -471,7 +458,8 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
       warehouse = Warehouse,
       sanitizeIdentifiers = Some(true),
       retryTransactionTimeoutMs = Some(0),
-      maxTransactionReattempts = Some(0))
+      maxTransactionReattempts = Some(10),
+      stagingFileSizeMb = None)
 
   val hygienicIdent: String => String = inp => QueryGen.sanitizeIdentifier(inp, true)
 
@@ -530,7 +518,7 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
     }
 
   def dest[A](cfg: Json)(f: Either[DM.InitErr, Destination[IO]] => IO[A]): IO[A] =
-    DM.destination[IO](cfg, _ => _ => Stream.empty).use(f)
+    DM.destination[IO](cfg, _ => _ => Stream.empty, _ => IO.pure(None)).use(f)
 
   trait Consumer[A]{
     def apply[R <: HList, K <: HList, V <: HList, T <: HList, S <: HList](
@@ -553,7 +541,7 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
   object Consumer {
     def upsert[A](cfg: SnowflakeConfig = config): Resource[IO, Consumer[A]] = {
       val rsink: Resource[IO, ResultSink.UpsertSink[IO, ColumnType.Scalar, Byte]] =
-        DM.destination[IO](cfg.asJson, _ => _ => Stream.empty) evalMap {
+        DM.destination[IO](cfg.asJson, _ => _ => Stream.empty, _ => IO.pure(None)) evalMap {
           case Left(err) =>
             IO.raiseError(new RuntimeException(err.shows))
           case Right(dst) =>
@@ -600,7 +588,7 @@ object SnowflakeDestinationSpec extends EffectfulQSpec[IO] with CsvSupport {
 
     def append[A](cfg: SnowflakeConfig = config): Resource[IO, Consumer[A]] = {
       val rsink: Resource[IO, ResultSink.AppendSink[IO, ColumnType.Scalar]] =
-        DM.destination[IO](cfg.asJson, _ => _ => Stream.empty) evalMap {
+        DM.destination[IO](cfg.asJson, _ => _ => Stream.empty, _ => IO.pure(None)) evalMap {
           case Left(err) =>
             IO.raiseError(new RuntimeException(err.shows))
           case Right(dst) =>

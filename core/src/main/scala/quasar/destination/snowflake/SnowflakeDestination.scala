@@ -19,7 +19,7 @@ package quasar.destination.snowflake
 import scala._, Predef._
 
 import cats.data.{NonEmptyList, Ior}
-import cats.effect.{ConcurrentEffect, Timer, Resource, ContextShift}
+import cats.effect._
 
 import doobie.Transactor
 
@@ -33,7 +33,7 @@ import quasar.connector.MonadResourceErr
 import quasar.connector.destination._
 import quasar.connector.render.RenderConfig
 import quasar.lib.jdbc.destination.WriteMode
-import quasar.lib.jdbc.destination.flow.{FlowSinks, FlowArgs, Flow, Retry}
+import quasar.lib.jdbc.destination.flow.Retry
 
 import org.slf4s.Logger
 
@@ -41,15 +41,16 @@ import scala.concurrent.duration._
 import quasar.api.push.param.IntegerStep
 
 final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer: ContextShift](
-    xa: Transactor[F],
+    val transactor: Resource[F, Transactor[F]],
     writeMode: WriteMode,
     schema: String,
     hygienicIdent: String => String,
     retryTimeout: FiniteDuration,
     maxRetries: Int,
-    logger: Logger)
-    extends Destination[F]
-    with FlowSinks[F, SnowflakeType, Byte] {
+    stagingSize: Int,
+    val blocker: Blocker,
+    val logger: Logger)
+    extends Flow.Sinks[F] with Destination[F] {
 
   type Type = SnowflakeType
   type TypeId = SnowflakeTypeId
@@ -149,15 +150,33 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
   def destinationType: DestinationType =
     SnowflakeDestinationModule.destinationType
 
-  def flowResource(args: FlowArgs[SnowflakeType]): Resource[F, Flow[Byte]] =
-    TempTableFlow(xa, logger, writeMode, schema, hygienicIdent, args) map { (flow: Flow[Byte]) =>
-      flow.mapK(Retry[F](maxRetries, retryTimeout))
-    }
+// <<<<<<< HEAD
+//   def flowResource(args: FlowArgs[SnowflakeType]): Resource[F, Flow[Byte]] =
+//     TempTableFlow(xa, logger, writeMode, schema, hygienicIdent, args) map { (flow: Flow[Byte]) =>
+//       flow.mapK(Retry[F](maxRetries, retryTimeout))
+//     }
 
-  def render(args: FlowArgs[SnowflakeType]) = RenderConfig.Csv(includeHeader = false)
+//   def render(args: FlowArgs[SnowflakeType]) = RenderConfig.Csv(includeHeader = false)
+// =======
+  def tableBuilder(args: Flow.Args, xa: Transactor[F], logger: Logger): Resource[F, TempTable.Builder[F]] = {
+    val stagingParams = StageFile.Params(
+      maxRetries = maxRetries,
+      timeout = retryTimeout,
+      maxFileSize = stagingSize)
 
-  val flowTransactor = xa
-  val flowLogger = logger
+    Resource.eval(TempTable.builder[F](
+      writeMode,
+      schema,
+      hygienicIdent,
+      Retry[F](maxRetries, retryTimeout),
+      args,
+      stagingParams,
+      xa,
+      logger))
+  }
+// >>>>>>> 290f272d634b2d0f133e7ea5cffc21e55258e6a4
+
+  def render: RenderConfig[Byte] = RenderConfig.Csv(includeHeader = false)
 
   val sinks: NonEmptyList[ResultSink[F, SnowflakeType]] =
     flowSinks
