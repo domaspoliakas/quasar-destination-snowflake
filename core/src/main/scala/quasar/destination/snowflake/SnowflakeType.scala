@@ -28,7 +28,7 @@ sealed trait SnowflakeType extends Product with Serializable {
 object SnowflakeType {
 
   final case class NUMBER(precision: Int, scale: Int) extends SnowflakeType {
-    def fragment: Fragment = fr0"NUMBER($precision, $scale)"
+    def fragment: Fragment = Fragment.const0(s"NUMBER($precision, $scale)")
   }
 
   final case object FLOAT extends SnowflakeType {
@@ -36,7 +36,7 @@ object SnowflakeType {
   }
 
   final case class VARCHAR(size: Int) extends SnowflakeType {
-    def fragment: Fragment = fr0"VARCHAR($size)"
+    def fragment: Fragment = Fragment.const0(s"VARCHAR($size)")
   }
 
   final case object BINARY extends SnowflakeType {
@@ -56,7 +56,7 @@ object SnowflakeType {
   }
 
   final case class TIME(precision: Int) extends SnowflakeType {
-    def fragment: Fragment = fr0"TIME($precision)"
+    def fragment: Fragment = Fragment.const0(s"TIME($precision)")
   }
 
   final case object TIMESTAMP_NTZ extends SnowflakeType {
