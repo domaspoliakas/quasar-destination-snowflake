@@ -150,14 +150,6 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
   def destinationType: DestinationType =
     SnowflakeDestinationModule.destinationType
 
-// <<<<<<< HEAD
-//   def flowResource(args: FlowArgs[SnowflakeType]): Resource[F, Flow[Byte]] =
-//     TempTableFlow(xa, logger, writeMode, schema, hygienicIdent, args) map { (flow: Flow[Byte]) =>
-//       flow.mapK(Retry[F](maxRetries, retryTimeout))
-//     }
-
-//   def render(args: FlowArgs[SnowflakeType]) = RenderConfig.Csv(includeHeader = false)
-// =======
   def tableBuilder(args: Flow.Args, xa: Transactor[F], logger: Logger): Resource[F, TempTable.Builder[F]] = {
     val stagingParams = StageFile.Params(
       maxRetries = maxRetries,
@@ -174,7 +166,6 @@ final class SnowflakeDestination[F[_]: ConcurrentEffect: MonadResourceErr: Timer
       xa,
       logger))
   }
-// >>>>>>> 290f272d634b2d0f133e7ea5cffc21e55258e6a4
 
   def render: RenderConfig[Byte] = RenderConfig.Csv(includeHeader = false)
 

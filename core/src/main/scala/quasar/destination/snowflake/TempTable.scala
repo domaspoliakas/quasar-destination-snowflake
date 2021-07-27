@@ -250,29 +250,6 @@ object TempTable {
   }
 
   private def mkColumn(hygienicIdent: String => String, c: Column[SnowflakeType])
-      : Fragment = c.tpe.fragment
+      : Fragment = Fragment.const(hygienicIdent(c.name)) ++ c.tpe.fragment
 
-
-
-
-
-//     columnTypeToSnowflake(c.tpe)
-//       .map(Fragment.const(hygienicIdent(c.name)) ++ _)
-
-//   private def columnTypeToSnowflake(ct: ColumnType.Scalar)
-//       : ValidatedNel[ColumnType.Scalar, Fragment] =
-//     ct match {
-//       case ColumnType.Null => fr0"BYTEINT".validNel
-//       case ColumnType.Boolean => fr0"BOOLEAN".validNel
-//       case ColumnType.LocalTime => fr0"TIME".validNel
-//       case ot @ ColumnType.OffsetTime => ot.invalidNel
-//       case ColumnType.LocalDate => fr0"DATE".validNel
-//       case od @ ColumnType.OffsetDate => od.invalidNel
-//       case ColumnType.LocalDateTime => fr0"TIMESTAMP_NTZ".validNel
-//       case ColumnType.OffsetDateTime => fr0"TIMESTAMP_TZ".validNel
-//       case i @ ColumnType.Interval => i.invalidNel
-//       // this is an arbitrary precision and scale
-//       case ColumnType.Number => fr0"NUMBER(33, 3)".validNel
-//       case ColumnType.String => fr0"STRING".validNel
-//     }
 }
